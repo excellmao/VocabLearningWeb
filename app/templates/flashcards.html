@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block title %}Flashcards - Vocab App{% endblock %}
+
+{% block content %}
+<div class="flashcards-header">
+    <h2>Your Vocabulary Library</h2>
+    <a href="{{ url_for('add_word') }}" class="btn btn-primary">+ Add New Word</a>
+</div>
+
+<div class="tabs">
+    <button class="tab-btn active">All Words</button>
+    <button class="tab-btn">Recently Learned</button>
+    <button class="tab-btn">Favorites</button>
+</div>
+
+<div class="flashcard-grid">
+    {% for word in words %}
+        <div class="flip-card" tabindex="0" data-word-id="{{ word.id }}">
+            <div class="flip-card-inner">
+                
+                <div class="flip-card-front">
+                    <h3 class="word-term">{{ word.term }}</h3>
+                    <span class="topic-badge">{{ word.topic_category.name }}</span>
+                    <button class="audio-btn" onclick="playAudio('{{ word.term }}'); event.stopPropagation();">
+                        🔊
+                    </button>
+                    <p class="flip-hint">Press Space or Click to flip</p>
+                </div>
+                
+                <div class="flip-card-back">
+                    <h3 class="word-term">{{ word.term }}</h3>
+                    <div class="card-details">
+                        <p><strong>Definition:</strong> {{ word.definition }}</p>
+                        
+                        {% if word.example_sentence %}
+                            <p><strong>Example:</strong> <i>"{{ word.example_sentence }}"</i></p>
+                        {% endif %}
+                        
+                        {% if word.synonyms %}
+                            <p><strong>Synonyms:</strong> {{ word.synonyms }}</p>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="card-actions">
+                        <span class="difficulty-badge {{ word.user_difficulty }}">{{ word.user_difficulty | capitalize }}</span>
+                        <div>
+                            <button class="btn btn-small edit-btn">Edit</button>
+                            <form action="{{ url_for('delete_word', word_id=word.id) }}" method="POST" style="display:inline;">
+                                <button type="submit" class="btn btn-small delete-btn" onclick="return confirm('Delete this word?');">Delete</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                
+            </div>
+        </div>
+    {% endfor %}
+</div>
+{% endblock %}

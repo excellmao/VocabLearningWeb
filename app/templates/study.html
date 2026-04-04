@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+
+{% block title %}Study Session - Vocab App{% endblock %}
+
+{% block content %}
+<div class="study-container" style="max-width: 600px; margin: 0 auto; text-align: center;">
+    
+    <div id="session-active">
+        <h2>Smart Review Session</h2>
+        <p>Words remaining: <span id="cards-left">0</span></p>
+
+        <div class="flip-card study-card" id="study-card" style="margin: 30px auto; height: 300px;">
+            <div class="flip-card-inner" id="study-card-inner">
+                
+                <div class="flip-card-front">
+                    <h1 id="word-term" style="font-size: 2.5rem;">Loading...</h1>
+                    <p class="flip-hint">Click "Show Answer" or press Spacebar</p>
+                </div>
+                
+                <div class="flip-card-back">
+                    <h2 id="word-term-back"></h2>
+                    <div class="card-details">
+                        <p><strong>Definition:</strong> <span id="word-def"></span></p>
+                        <p id="word-example-container" style="display: none;">
+                            <strong>Example:</strong> <i id="word-example"></i>
+                        </p>
+                    </div>
+                </div>
+                
+            </div>
+        </div>
+
+        <div id="control-show" style="margin-top: 20px;">
+            <button class="btn btn-primary btn-large" onclick="showAnswer()">Show Answer</button>
+        </div>
+
+        <div id="control-rate" style="display: none; margin-top: 20px; gap: 10px; justify-content: center;">
+            <button class="btn" style="background: #f44336; color: white;" onclick="rateWord('hard')">Hard (Review Soon)</button>
+            <button class="btn" style="background: #ff9800; color: white;" onclick="rateWord('medium')">Medium (1 Day)</button>
+            <button class="btn" style="background: #4caf50; color: white;" onclick="rateWord('easy')">Easy (4 Days)</button>
+        </div>
+    </div>
+
+    <div id="session-complete" style="display: none; padding: 40px 0;">
+        <h2>🎉 Session Complete!</h2>
+        <p>You've cleared your review queue for now.</p>
+        <div class="stat-card" style="margin: 20px auto;">
+            <h3>XP Gained</h3>
+            <p class="stat-value" id="xp-gained" style="color: #4caf50;">+0 XP</p>
+        </div>
+        <a href="{{ url_for('dashboard') }}" class="btn btn-primary">Return to Dashboard</a>
+    </div>
+
+</div>
+
+<script>
+    let reviewQueue = {{ words | tojson }};
+    let currentCardIndex = 0;
+    let sessionXpGained = 0;
+
+    const cardInner = document.getElementById('study-card-inner');
+    const controlShow = document.getElementById('control-show');
+    const controlRate = document.getElementById('control-rate');
+    const cardsLeftDisplay = document.getElementById('cards-left');
+
+    function startSession() {
+        if (reviewQueue.length === 0) {
+            endSession();
+            return;
+        }
+        loadCard(reviewQueue[currentCardIndex]);
+    }
+
+    function loadCard(wordObj) {
+        // Reset UI
+        cardInner.parentElement.classList.remove('flipped');
+        controlShow.style.display = 'block';
+        controlRate.style.display = 'none';
+        cardsLeftDisplay.innerText = reviewQueue.length - currentCardIndex;
+
+        // Populate Data
+        document.getElementById('word-term').innerText = wordObj.term;
+        document.getElementById('word-term-back').innerText = wordObj.term;
+        document.getElementById('word-def').innerText = wordObj.definition;
+        
+        if (wordObj.example) {
+            document.getElementById('word-example').innerText = `"${wordObj.example}"`;
+            document.getElementById('word-example-container').style.display = 'block';
+        } else {
+            document.getElementById('word-example-container').style.display = 'none';
+        }
+    }
+
+    function showAnswer() {
+        cardInner.parentElement.classList.add('flipped');
+        controlShow.style.display = 'none';
+        controlRate.style.display = 'flex';
+    }
+
+    function rateWord(rating) {
+        const currentWord = reviewQueue[currentCardIndex];
+
+        fetch("{{ url_for('update_srs') }}", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                word_id: currentWord.id,
+                rating: rating
+            })
+        }).then(response => response.json())
+          .then(data => {
+              // Track XP for the summary screen
+              if(data.status === 'success') {
+                  if(rating === 'easy') sessionXpGained += 15;
+                  if(rating === 'medium') sessionXpGained += 10;
+                  if(rating === 'hard') sessionXpGained += 5;
+              }
+          });
+
+        currentCardIndex++;
+        if (currentCardIndex < reviewQueue.length) {
+            loadCard(reviewQueue[currentCardIndex]);
+        } else {
+            endSession();
+        }
+    }
+
+    function endSession() {
+        document.getElementById('session-active').style.display = 'none';
+        document.getElementById('session-complete').style.display = 'block';
+        document.getElementById('xp-gained').innerText = `+${sessionXpGained} XP`;
+    }
+
+    // Keyboard Shortcuts
+    document.addEventListener('keydown', function(e) {
+        if (document.getElementById('session-active').style.display !== 'none') {
+            if (e.code === 'Space' && controlShow.style.display === 'block') {
+                e.preventDefault();
+                showAnswer();
+            } else if (controlRate.style.display === 'flex') {
+                if (e.key === '1') rateWord('hard');
+                if (e.key === '2') rateWord('medium');
+                if (e.key === '3') rateWord('easy');
+            }
+        }
+    });
+    
+    startSession();
+</script>
+{% endblock %}

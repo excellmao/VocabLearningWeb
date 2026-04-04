@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block title %}Quiz - Vocab App{% endblock %}
+
+{% block content %}
+<div class="quiz-container" style="max-width: 600px; margin: 0 auto; text-align: center;">
+    <h2>Multiple Choice Quiz</h2>
+    
+    <div class="card" style="padding: 40px; margin-top: 20px;">
+        <h3 style="color: #666;">What is the definition of:</h3>
+        <h1 style="font-size: 3rem; color: #333; margin: 20px 0;">{{ quiz_data.target.term }}</h1>
+        
+        <div class="options-grid" style="display: flex; flex-direction: column; gap: 15px; margin-top: 30px;">
+            {% for option in quiz_data.options %}
+                <button class="btn option-btn" style="padding: 15px; text-align: left; background: #f8f9fa; color: #333; border: 2px solid #ddd;" 
+                        onclick="checkAnswer({{ option.id }}, {{ quiz_data.target.id }}, this)">
+                    {{ option.definition }}
+                </button>
+            {% endfor %}
+        </div>
+    </div>
+    
+    <div id="result-message" style="margin-top: 20px; font-size: 1.5rem; font-weight: bold; display: none;"></div>
+    <button id="next-btn" class="btn btn-primary btn-large" style="margin-top: 20px; display: none;" onclick="location.reload()">Next Question</button>
+</div>
+
+<script>
+    function checkAnswer(selectedId, targetId, btnElement) {
+        const isCorrect = (selectedId === targetId);
+        const resultDiv = document.getElementById('result-message');
+        const nextBtn = document.getElementById('next-btn');
+        
+        // Disable all buttons to prevent multiple clicks
+        document.querySelectorAll('.option-btn').forEach(btn => {
+            btn.disabled = true;
+            btn.style.cursor = 'not-allowed';
+        });
+        
+        // Visual Feedback
+        if (isCorrect) {
+            btnElement.style.backgroundColor = '#4caf50'; 
+            btnElement.style.borderColor = '#4caf50';
+            btnElement.style.color = 'white';
+            resultDiv.innerText = "✅ Correct! +5 XP";
+            resultDiv.style.color = '#4caf50';
+        } else {
+            btnElement.style.backgroundColor = '#f44336'; 
+            btnElement.style.borderColor = '#f44336';
+            btnElement.style.color = 'white';
+            resultDiv.innerText = "❌ Incorrect!";
+            resultDiv.style.color = '#f44336';
+        }
+        
+        resultDiv.style.display = 'block';
+        nextBtn.style.display = 'inline-block';
+        
+        // Send the accuracy result silently to the backend
+        fetch("{{ url_for('submit_quiz') }}", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({
+                word_id: targetId,
+                is_correct: isCorrect
+            })
+        });
+    }
+</script>
+{% endblock %}

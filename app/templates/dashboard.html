@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Vocab App{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <div class="welcome-header">
+        <h2>Welcome back, {{ current_user.username }}!</h2>
+        <p>Ready to learn some new words today?</p>
+    </div>
+
+    <div class="gamification-panel">
+        <div class="stat-card">
+            <h3>Current Streak 🔥</h3>
+            <p class="stat-value">{{ current_user.current_streak }} Days</p>
+        </div>
+        
+        <div class="stat-card">
+            <h3>Level {{ current_user.level }}</h3>
+            <div class="xp-bar-container">
+                <div class="xp-bar" style="width: {{ (current_user.xp % 1000) / 10 }}%;"></div>
+            </div>
+            <p class="xp-text">{{ current_user.xp }} Total XP</p>
+        </div>
+    </div>
+
+    <div class="stats-panel">
+        <div class="stat-card">
+            <h3>Words in Library</h3>
+            <p class="stat-value">{{ total_words }}</p>
+        </div>
+        <div class="stat-card">
+            <h3>Mastered Words</h3>
+            <p class="stat-value">{{ mastered_words }}</p>
+        </div>
+        <div class="stat-card">
+            <h3>Accuracy Rate</h3>
+            <p class="stat-value">85%</p> 
+        </div>
+    </div>
+
+    <div class="action-panel">
+        <a href="{{ url_for('study') }}" class="btn btn-primary btn-large">Continue Learning (SRS)</a>
+        <button class="btn btn-secondary btn-large">Start Daily Challenge</button>
+    </div>
+</div>
+{% endblock %}

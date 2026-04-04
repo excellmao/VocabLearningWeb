@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block title %}Add Word - Vocab App{% endblock %}
+
+{% block content %}
+<div class="form-container card" style="max-width: 500px; margin: 20px auto; padding: 30px;">
+    <h2>Add New Word</h2>
+    
+    <form method="POST" action="">
+        {{ form.hidden_tag() }} 
+        
+        <div style="margin-bottom: 15px; text-align: left;">
+            {{ form.term.label }}<br>
+            {{ form.term(style="width: 100%; padding: 8px;") }}
+        </div>
+        
+        <div style="margin-bottom: 15px; text-align: left;">
+            {{ form.definition.label }}<br>
+            {{ form.definition(style="width: 100%; padding: 8px; height: 80px;") }}
+        </div>
+        
+        <div style="margin-bottom: 15px; text-align: left;">
+            {{ form.example_sentence.label }}<br>
+            {{ form.example_sentence(style="width: 100%; padding: 8px;") }}
+        </div>
+
+        <div style="margin-bottom: 15px; text-align: left;">
+            {{ form.synonyms.label }}<br>
+            {{ form.synonyms(style="width: 100%; padding: 8px;") }}
+        </div>
+
+        <div style="margin-bottom: 20px; text-align: left;">
+            {{ form.topic_id.label }}<br>
+            {{ form.topic_id(style="width: 100%; padding: 8px;") }}
+        </div>
+        
+        <div>
+            {{ form.submit(class="btn btn-primary", style="width: 100%;") }}
+        </div>
+    </form>
+</div>
+{% endblock %}

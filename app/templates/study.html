@@ -1,152 +1,128 @@
 {% extends "base.html" %}
-
-{% block title %}Study Session - Vocab App{% endblock %}
+{% block title %}Smart Study - Vocab App{% endblock %}
 
 {% block content %}
-<div class="study-container" style="max-width: 600px; margin: 0 auto; text-align: center;">
-    
-    <div id="session-active">
-        <h2>Smart Review Session</h2>
-        <p>Words remaining: <span id="cards-left">0</span></p>
+<div class="w3-card" style="max-width: 600px; margin: 40px auto; padding: 40px; text-align: center;">
+    <h2>Smart Review Session</h2>
+    <p id="remaining-text" style="color: #666; margin-bottom: 20px;">Words remaining: {{ words|length }}</p>
 
-        <div class="flip-card study-card" id="study-card" style="margin: 30px auto; height: 300px;">
-            <div class="flip-card-inner" id="study-card-inner">
-                
-                <div class="flip-card-front">
-                    <h1 id="word-term" style="font-size: 2.5rem;">Loading...</h1>
-                    <p class="flip-hint">Click "Show Answer" or press Spacebar</p>
-                </div>
-                
-                <div class="flip-card-back">
-                    <h2 id="word-term-back"></h2>
-                    <div class="card-details">
-                        <p><strong>Definition:</strong> <span id="word-def"></span></p>
-                        <p id="word-example-container" style="display: none;">
-                            <strong>Example:</strong> <i id="word-example"></i>
-                        </p>
-                    </div>
-                </div>
-                
+    {% if words|length == 0 %}
+        <div style="margin-top: 40px;">
+            <h3>You're all caught up! 🎉</h3>
+            <p>Check back later for more reviews, or enroll in a new deck.</p>
+            <a href="{{ url_for('flashcards') }}" class="btn btn-primary" style="background: #04AA6D; margin-top: 15px; display: inline-block;">Browse Decks</a>
+        </div>
+    {% else %}
+        <div id="study-card" class="w3-card" style="margin: 0 auto; padding: 40px; border: 2px solid #04AA6D; border-radius: 10px; cursor: pointer; min-height: 250px; display: flex; flex-direction: column; justify-content: center;">
+            <h1 id="term-display" style="font-size: 2.5rem; margin-bottom: 15px;"></h1>
+            <p id="hint-text" style="color: #888; font-size: 0.9rem;">Click or press Spacebar to show answer</p>
+
+            <div id="answer-section" style="display: none; margin-top: 20px; border-top: 1px solid #eee; padding-top: 20px;">
+                <p id="definition-display" style="font-size: 1.2rem; margin-bottom: 10px; text-align: left;"></p>
+                <p id="example-display" style="font-style: italic; color: #666; text-align: left;"></p>
             </div>
         </div>
 
-        <div id="control-show" style="margin-top: 20px;">
-            <button class="btn btn-primary btn-large" onclick="showAnswer()">Show Answer</button>
+        <div id="rating-buttons" style="display: none; gap: 10px; justify-content: center; margin-top: 20px;">
+            <button onclick="submitRating('hard')" class="btn" style="background: #f44336; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer;">Hard (10 Min)</button>
+            <button onclick="submitRating('medium')" class="btn" style="background: #ff9800; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer;">Medium (1 Day)</button>
+            <button onclick="submitRating('easy')" class="btn" style="background: #4caf50; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer;">Easy (4 Days)</button>
         </div>
+        <div id="session-complete" style="display: none; margin-top: 40px;">
+            <i class="fa-solid fa-check-circle" style="color: #04AA6D; font-size: 4rem; margin-bottom: 20px;"></i>
+            <h3>Session Complete! 🎉</h3>
+            <p>You've finished your 15-word review batch for now.</p>
 
-        <div id="control-rate" style="display: none; margin-top: 20px; gap: 10px; justify-content: center;">
-            <button class="btn" style="background: #f44336; color: white;" onclick="rateWord('hard')">Hard (Review Soon)</button>
-            <button class="btn" style="background: #ff9800; color: white;" onclick="rateWord('medium')">Medium (1 Day)</button>
-            <button class="btn" style="background: #4caf50; color: white;" onclick="rateWord('easy')">Easy (4 Days)</button>
+            <div style="margin-top: 25px; display: flex; gap: 15px; justify-content: center;">
+                <a href="{{ url_for('dashboard') }}" class="btn" style="background: #e0e0e0; color: #333; padding: 10px 20px; border-radius: 5px; text-decoration: none; font-weight: bold;">Back to Dashboard</a>
+
+                <a href="{{ url_for('study') }}" class="btn" style="background: #04AA6D; color: white; padding: 10px 20px; border-radius: 5px; text-decoration: none; font-weight: bold;">Study 15 More</a>
+            </div>
         </div>
-    </div>
-
-    <div id="session-complete" style="display: none; padding: 40px 0;">
-        <h2>🎉 Session Complete!</h2>
-        <p>You've cleared your review queue for now.</p>
-        <div class="stat-card" style="margin: 20px auto;">
-            <h3>XP Gained</h3>
-            <p class="stat-value" id="xp-gained" style="color: #4caf50;">+0 XP</p>
-        </div>
-        <a href="{{ url_for('dashboard') }}" class="btn btn-primary">Return to Dashboard</a>
-    </div>
-
+    {% endif %}
 </div>
 
 <script>
-    let reviewQueue = {{ words | tojson }};
-    let currentCardIndex = 0;
-    let sessionXpGained = 0;
+    const studyWords = {{ words | tojson | safe }};
+    let currentIndex = 0;
 
-    const cardInner = document.getElementById('study-card-inner');
-    const controlShow = document.getElementById('control-show');
-    const controlRate = document.getElementById('control-rate');
-    const cardsLeftDisplay = document.getElementById('cards-left');
+    const card = document.getElementById('study-card');
+    const termDisplay = document.getElementById('term-display');
+    const answerSection = document.getElementById('answer-section');
+    const definitionDisplay = document.getElementById('definition-display');
+    const exampleDisplay = document.getElementById('example-display');
+    const hintText = document.getElementById('hint-text');
+    const ratingButtons = document.getElementById('rating-buttons');
+    const remainingText = document.getElementById('remaining-text');
 
-    function startSession() {
-        if (reviewQueue.length === 0) {
-            endSession();
+    let isFlipped = false;
+
+    function loadWord() {
+        if (currentIndex >= studyWords.length) {
+            // STOP reloading! Hide the study UI and show the completion screen instead.
+            document.getElementById('study-card').style.display = 'none';
+            document.getElementById('rating-buttons').style.display = 'none';
+            document.getElementById('remaining-text').style.display = 'none';
+            document.getElementById('session-complete').style.display = 'block';
             return;
         }
-        loadCard(reviewQueue[currentCardIndex]);
+
+        const currentWord = studyWords[currentIndex];
+        termDisplay.innerText = currentWord.term;
+        definitionDisplay.innerText = "Definition: " + currentWord.definition;
+        exampleDisplay.innerText = currentWord.example ? '"' + currentWord.example + '"' : "";
+        remainingText.innerText = `Words remaining: ${studyWords.length - currentIndex}`;
+
+        // Reset UI back to the "Front" of the card
+        isFlipped = false;
+        answerSection.style.display = 'none';
+        ratingButtons.style.display = 'none';
+        hintText.style.display = 'block';
     }
 
-    function loadCard(wordObj) {
-        // Reset UI
-        cardInner.parentElement.classList.remove('flipped');
-        controlShow.style.display = 'block';
-        controlRate.style.display = 'none';
-        cardsLeftDisplay.innerText = reviewQueue.length - currentCardIndex;
-
-        // Populate Data
-        document.getElementById('word-term').innerText = wordObj.term;
-        document.getElementById('word-term-back').innerText = wordObj.term;
-        document.getElementById('word-def').innerText = wordObj.definition;
-        
-        if (wordObj.example) {
-            document.getElementById('word-example').innerText = `"${wordObj.example}"`;
-            document.getElementById('word-example-container').style.display = 'block';
-        } else {
-            document.getElementById('word-example-container').style.display = 'none';
+    function flipCard() {
+        if (!isFlipped && studyWords.length > 0) {
+            isFlipped = true;
+            answerSection.style.display = 'block';
+            ratingButtons.style.display = 'flex';
+            hintText.style.display = 'none';
         }
     }
 
-    function showAnswer() {
-        cardInner.parentElement.classList.add('flipped');
-        controlShow.style.display = 'none';
-        controlRate.style.display = 'flex';
+    if(card) {
+        card.addEventListener('click', flipCard);
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') {
+                e.preventDefault();
+                flipCard();
+            }
+        });
     }
 
-    function rateWord(rating) {
-        const currentWord = reviewQueue[currentCardIndex];
+    function submitRating(rating) {
+        const currentWord = studyWords[currentIndex];
 
+        // This fetch call correctly sends the progress_id now!
         fetch("{{ url_for('update_srs') }}", {
             method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-                word_id: currentWord.id,
+                progress_id: currentWord.progress_id,
                 rating: rating
             })
-        }).then(response => response.json())
-          .then(data => {
-              // Track XP for the summary screen
-              if(data.status === 'success') {
-                  if(rating === 'easy') sessionXpGained += 15;
-                  if(rating === 'medium') sessionXpGained += 10;
-                  if(rating === 'hard') sessionXpGained += 5;
-              }
-          });
-
-        currentCardIndex++;
-        if (currentCardIndex < reviewQueue.length) {
-            loadCard(reviewQueue[currentCardIndex]);
-        } else {
-            endSession();
-        }
-    }
-
-    function endSession() {
-        document.getElementById('session-active').style.display = 'none';
-        document.getElementById('session-complete').style.display = 'block';
-        document.getElementById('xp-gained').innerText = `+${sessionXpGained} XP`;
-    }
-
-    // Keyboard Shortcuts
-    document.addEventListener('keydown', function(e) {
-        if (document.getElementById('session-active').style.display !== 'none') {
-            if (e.code === 'Space' && controlShow.style.display === 'block') {
-                e.preventDefault();
-                showAnswer();
-            } else if (controlRate.style.display === 'flex') {
-                if (e.key === '1') rateWord('hard');
-                if (e.key === '2') rateWord('medium');
-                if (e.key === '3') rateWord('easy');
+        }).then(response => {
+            if(response.ok) {
+                currentIndex++;
+                loadWord(); // Load the next word in the array
+            } else {
+                alert("Error saving progress to database.");
             }
-        }
-    });
-    
-    startSession();
+        });
+    }
+
+    // Start the session
+    if (studyWords && studyWords.length > 0) {
+        loadWord();
+    }
 </script>
 {% endblock %}

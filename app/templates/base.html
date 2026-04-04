@@ -4,40 +4,66 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Vocab App{% endblock %}</title>
-
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
-<body>
-    <header>
-        <nav class="navbar">
-            <div class="logo">
-                <a href="{{ url_for('dashboard') }}">VocabApp</a>
-            </div>
+<body class="app-layout">
 
-            <ul class="nav-links">
-                {% if current_user.is_authenticated %}
-                    <li><a href="{{ url_for('dashboard') }}">Home</a></li> <li><a href="{{ url_for('study') }}">Study</a></li> <li><a href="{{ url_for('quiz') }}">Quiz</a></li> <li><a href="{{ url_for('flashcards') }}">Flashcards</a></li> <li><a href="{{ url_for('progress') }}">Progress</a></li> <li><a href="{{ url_for('logout') }}">Logout</a></li> {% else %}
-                    <li><a href="{{ url_for('login') }}">Login</a></li>
-                    <li><a href="{{ url_for('register') }}">Register</a></li>
-                {% endif %}
-            </ul>
-        </nav>
-    </header>
+    <aside class="sidebar">
+        <div class="sidebar-brand">
+            <i class="fa-solid fa-layer-group"></i> VocabApp
+        </div>
 
-    <main class="container">
-        {% with messages = get_flashed_messages() %}
-            {% if messages %}
-                <ul class="flashes">
-                {% for message in messages %}
-                    <li>{{ message }}</li>
-                {% endfor %}
-                </ul>
+        <ul class="sidebar-nav">
+            <li><a href="{{ url_for('flashcards') }}"><i class="fa-solid fa-clone"></i> Flashcards Library</a></li>
+
+            {% if current_user.is_authenticated %}
+                <li><a href="{{ url_for('dashboard') }}"><i class="fa-solid fa-table-columns"></i> Dashboard</a></li>
+                <li><a href="{{ url_for('study') }}"><i class="fa-solid fa-brain"></i> Smart Study</a></li>
+                <li><a href="{{ url_for('quiz_setup') }}"><i class="fa-solid fa-gamepad"></i> Quizzes</a></li>
+                <li><a href="{{ url_for('progress') }}"><i class="fa-solid fa-chart-line"></i> My Progress</a></li>
             {% endif %}
-        {% endwith %}
+        </ul>
 
-        {% block content %}
-        {% endblock %}
-    </main>
+        <div class="sidebar-bottom">
+            {% if current_user.is_authenticated %}
+                <a href="{{ url_for('logout') }}"><i class="fa-solid fa-arrow-right-from-bracket"></i> Logout</a>
+            {% else %}
+                <a href="{{ url_for('login') }}"><i class="fa-solid fa-right-to-bracket"></i> Login</a>
+                <a href="{{ url_for('register') }}"><i class="fa-solid fa-user-plus"></i> Sign Up</a>
+            {% endif %}
+        </div>
+    </aside>
+
+    <div class="main-wrapper">
+
+        <header class="topbar">
+            {% if current_user.is_authenticated %}
+                <div class="topbar-stats">
+                    <span class="stat-item">Level {{ current_user.level }}</span>
+                    <span class="stat-item">{{ current_user.xp }} Total XP</span>
+                </div>
+                <div class="user-profile">
+                    <div class="avatar">{{ current_user.username[0] | upper }}</div>
+                </div>
+            {% endif %}
+        </header>
+
+        <main class="content-area">
+            {% with messages = get_flashed_messages() %}
+                {% if messages %}
+                    <ul class="flashes">
+                    {% for message in messages %}
+                        <li>{{ message }}</li>
+                    {% endfor %}
+                    </ul>
+                {% endif %}
+            {% endwith %}
+
+            {% block content %}
+            {% endblock %}
+        </main>
+    </div>
 
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 </body>

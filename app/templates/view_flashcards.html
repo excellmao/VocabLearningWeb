@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+
+{% block title %}{{ topic.name }} - Vocab App{% endblock %}
+
+{% block content %}
+<div class="deck-header" style="margin-bottom: 30px; display: flex; justify-content: space-between; align-items: flex-start;">
+    <div>
+        <a href="{{ url_for('flashcards') }}" style="text-decoration: none; color: #666;">
+            <i class="fa-solid fa-arrow-left"></i> Back to Library
+        </a>
+        <h1 style="margin-top: 10px;">{{ topic.name }}</h1>
+        <p>{{ words|length }} terms to study</p>
+
+        {% if current_user.is_authenticated %}
+        <div style="margin-top: 15px; display: flex; gap: 10px;">
+            {% if is_enrolled %}
+                <button class="btn" style="background-color: #e0e0e0; color: #666; border: none; padding: 10px 20px; border-radius: 5px; font-weight: bold; cursor: not-allowed;" disabled>
+                    <i class="fa-solid fa-check"></i> Added to My Learning
+                </button>
+                <form action="{{ url_for('unenroll_topic', topic_id=topic.id) }}" method="POST" style="margin: 0;">
+                    <button type="submit" class="btn" style="background-color: #ff9800; border: none; color: white; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold;" onclick="return confirm('Remove this deck from your queue? You will lose your study progress for these words.');">
+                        <i class="fa-solid fa-xmark"></i> Remove
+                    </button>
+                </form>
+            {% else %}
+                <form action="{{ url_for('enroll_topic', topic_id=topic.id) }}" method="POST" style="margin: 0;">
+                    <button type="submit" class="btn btn-primary" style="background-color: #04AA6D; border: none; color: white; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold;">
+                        Add to My Learning
+                    </button>
+                </form>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+
+    {% if current_user.is_authenticated and current_user.id == topic.user_id %}
+    <div style="display: flex; gap: 10px; align-items: center; margin-top: 35px;">
+        <a href="{{ url_for('add_word', topic_id=topic.id) }}" class="btn" style="background-color: #e0e0e0; color: #333; text-decoration: none; padding: 10px 15px; border-radius: 5px; font-weight: bold;">
+            <i class="fa-solid fa-pen"></i> Manage Words
+        </a>
+        <form action="{{ url_for('delete_topic', topic_id=topic.id) }}" method="POST" style="margin: 0;">
+            <button type="submit" class="btn" style="background-color: #ff4d4d; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; font-weight: bold;" onclick="return confirm('Are you sure you want to delete this entire deck? This cannot be undone.');">
+                <i class="fa-solid fa-trash"></i> Delete Deck
+            </button>
+        </form>
+    </div>
+    {% endif %}
+</div>
+
+<div class="flashcard-grid">
+    {% for word in words %}
+        <div class="flip-card" tabindex="0" data-word-id="{{ word.id }}" data-term="{{ word.term }}">
+            <div class="flip-card-inner">
+
+                <div class="flip-card-front">
+                    <h3 class="word-term" style="font-size: 1.8rem;">{{ word.term }}</h3>
+
+                    <div style="margin-top: 15px; font-size: 1.5rem; color: #666;">
+                        🔊
+                    </div>
+
+                    <p class="flip-hint" style="font-size: 0.8rem; color: #888; position: absolute; bottom: 15px;">Click to flip & listen</p>
+                </div>
+
+                <div class="flip-card-back" style="padding: 30px;">
+                    <h3 class="word-term" style="margin-bottom: 15px; border-bottom: 1px solid #ddd; padding-bottom: 10px;">{{ word.term }}</h3>
+                    <div class="card-details" style="font-size: 1.1rem; line-height: 1.5;">
+                        <p><strong>Definition:</strong> {{ word.definition }}</p>
+
+                        {% if word.example_sentence %}
+                            <p style="margin-top: 10px;"><strong>Example:</strong> <i>"{{ word.example_sentence }}"</i></p>
+                        {% endif %}
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    {% endfor %}
+</div>
+
+{% if words|length == 0 %}
+    <div class="w3-card" style="text-align: center; padding: 40px;">
+        <h3>This deck is empty!</h3>
+        <p>No words have been added to this topic yet.</p>
+    </div>
+{% endif %}
+{% endblock %}

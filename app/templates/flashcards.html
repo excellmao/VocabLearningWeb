@@ -1,59 +1,30 @@
 {% extends "base.html" %}
 
-{% block title %}Flashcards - Vocab App{% endblock %}
+{% block title %}Public Library - Vocab App{% endblock %}
 
 {% block content %}
-<div class="flashcards-header">
-    <h2>Your Vocabulary Library</h2>
-    <a href="{{ url_for('add_word') }}" class="btn btn-primary">+ Add New Word</a>
+<div class="library-header" style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 30px;">
+    <div>
+        <h1 style="margin-bottom: 5px;">Public Vocabulary Decks</h1>
+        <p style="color: #666;">Select a topic to start learning.</p>
+    </div>
+
+    {% if current_user.is_authenticated %}
+    <div style="margin-top: 20px;">
+        <a href="{{ url_for('create_topic') }}" class="btn btn-primary" style="background-color: #04AA6D; border: none; color: white; padding: 10px 20px; border-radius: 5px; text-decoration: none; font-weight: bold; display: inline-block;">
+            <i class="fa-solid fa-plus"></i> Create New Deck
+        </a>
+    </div>
+    {% endif %}
 </div>
 
-<div class="tabs">
-    <button class="tab-btn active">All Words</button>
-    <button class="tab-btn">Recently Learned</button>
-    <button class="tab-btn">Favorites</button>
-</div>
-
-<div class="flashcard-grid">
-    {% for word in words %}
-        <div class="flip-card" tabindex="0" data-word-id="{{ word.id }}">
-            <div class="flip-card-inner">
-                
-                <div class="flip-card-front">
-                    <h3 class="word-term">{{ word.term }}</h3>
-                    <span class="topic-badge">{{ word.topic_category.name }}</span>
-                    <button class="audio-btn" onclick="playAudio('{{ word.term }}'); event.stopPropagation();">
-                        🔊
-                    </button>
-                    <p class="flip-hint">Press Space or Click to flip</p>
-                </div>
-                
-                <div class="flip-card-back">
-                    <h3 class="word-term">{{ word.term }}</h3>
-                    <div class="card-details">
-                        <p><strong>Definition:</strong> {{ word.definition }}</p>
-                        
-                        {% if word.example_sentence %}
-                            <p><strong>Example:</strong> <i>"{{ word.example_sentence }}"</i></p>
-                        {% endif %}
-                        
-                        {% if word.synonyms %}
-                            <p><strong>Synonyms:</strong> {{ word.synonyms }}</p>
-                        {% endif %}
-                    </div>
-                    
-                    <div class="card-actions">
-                        <span class="difficulty-badge {{ word.user_difficulty }}">{{ word.user_difficulty | capitalize }}</span>
-                        <div>
-                            <button class="btn btn-small edit-btn">Edit</button>
-                            <form action="{{ url_for('delete_word', word_id=word.id) }}" method="POST" style="display:inline;">
-                                <button type="submit" class="btn btn-small delete-btn" onclick="return confirm('Delete this word?');">Delete</button>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-                
-            </div>
+<div class="topic-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; margin-top: 30px;">
+    {% for topic in topics %}
+        <div class="w3-card topic-card">
+            <i class="fa-solid fa-folder-open" style="font-size: 2rem; color: #04AA6D;"></i>
+            <h3>{{ topic.name }}</h3>
+            <p>{{ topic.words|length }} Words</p>
+            <a href="{{ url_for('view_flashcards', topic_id=topic.id) }}" class="btn btn-primary">View Cards</a>
         </div>
     {% endfor %}
 </div>

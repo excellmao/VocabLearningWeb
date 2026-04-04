@@ -1,22 +1,35 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const cards = document.querySelectorAll('.flip-card');
 
-    cards.forEach(card => {
+    function playAudio(text) {
+        // Stop any currently playing audio so they don't overlap
+        window.speechSynthesis.cancel();
+
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = 'en-US'; // You can change this if you are learning a different language!
+        window.speechSynthesis.speak(utterance);
+    }
+
+    // Attach listeners to all flashcards
+    document.querySelectorAll('.flip-card').forEach(card => {
+
+        // Handle Mouse Click
         card.addEventListener('click', function() {
+            // 1. Flip the card
             this.classList.toggle('flipped');
+
+            // 2. Grab the word and play the audio
+            const term = this.getAttribute('data-term');
+            if (term) {
+                playAudio(term);
+            }
         });
 
+        // Keep Keyboard Accessibility (Spacebar / Enter)
         card.addEventListener('keydown', function(e) {
-            if (e.code === 'Space') {
-                e.preventDefault(); // Prevent page from scrolling down
-                this.classList.toggle('flipped');
+            if (e.key === ' ' || e.key === 'Enter') {
+                e.preventDefault(); // Stop the spacebar from scrolling the page down
+                this.click(); // Trigger the click event we just wrote above
             }
         });
     });
 });
-
-function playAudio(text) {
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = 'en-US';
-    window.speechSynthesis.speak(utterance);
-}

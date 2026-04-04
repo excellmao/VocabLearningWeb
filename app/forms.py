@@ -1,8 +1,7 @@
 from flask_wtf import FlaskForm
 from wtforms.validators import DataRequired, Length, EqualTo, ValidationError, equal_to
-from wtforms import PasswordField, SubmitField, StringField
+from wtforms import PasswordField, SubmitField, StringField, TextAreaField, SelectField
 from app.models import User
-from wtforms import StringField, TextAreaField, SelectField
 
 class RegistrationForm(FlaskForm):
     username = StringField('Username', validators=[DataRequired(), Length(min=3, max=20)])
@@ -28,3 +27,13 @@ class WordForm(FlaskForm):
     synonyms = StringField('Synonyms (Comma separated, Optional)')
     topic_id = SelectField('Topic', coerce=int, validators=[DataRequired()])
     submit = SubmitField('Save Word')
+
+class TopicForm(FlaskForm):
+    name = StringField('Deck Name', validators=[DataRequired(), Length(min=2, max=100)])
+    submit = SubmitField('Create Deck')
+
+class WordForm(FlaskForm):
+    term = StringField('Word/Term', validators=[DataRequired(), Length(max=100)])
+    definition = TextAreaField('Definition', validators=[DataRequired()])
+    example_sentence = TextAreaField('Example Sentence (Optional)')
+    submit = SubmitField('Add Word')

@@ -1,100 +1,108 @@
 {% extends "base.html" %}
-
-{% block title %}Your Progress - Vocab App{% endblock %}
+{% block title %}My Progress - Vocab App{% endblock %}
 
 {% block content %}
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<div class="deck-header">
+    <h1>My Learning Progress</h1>
+    <p style="color: #666; margin-top: 5px;">Track your vocabulary mastery and review your weakest terms.</p>
+</div>
 
-<div class="progress-container">
-    <h2>Learning Insights</h2>
-
-    <div class="insights-grid">
-        <div class="chart-section card">
-            <h3>📈 Words Learned Over Time</h3>
-            <div style="position: relative; height:250px; width:100%">
-                <canvas id="learningChart"></canvas>
-            </div>
-        </div>
-
-        <div class="mastery-section card">
-            <h3>🧠 Mastery Breakdown</h3>
-            <ul>
-                <li><strong>Mastered:</strong> {{ mastered_count }} Words</li>
-                <li><strong>Learning:</strong> {{ learning_count }} Words</li>
-                <li><strong>New:</strong> {{ new_count }} Words</li>
-            </ul>
+<div class="learning-grid" style="grid-template-columns: repeat(3, 1fr); margin-top: 30px;">
+    <div class="w3-card mini-stat-card">
+        <i class="fa-solid fa-seedling" style="color: #4caf50; font-size: 2rem;"></i>
+        <div>
+            <h4>New Words</h4>
+            <p style="font-size: 1.5rem; color: #333;">{{ new_count }}</p>
         </div>
     </div>
+    <div class="w3-card mini-stat-card">
+        <i class="fa-solid fa-brain" style="color: #ff9800; font-size: 2rem;"></i>
+        <div>
+            <h4>Learning</h4>
+            <p style="font-size: 1.5rem; color: #333;">{{ learning_count }}</p>
+        </div>
+    </div>
+    <div class="w3-card mini-stat-card">
+        <i class="fa-solid fa-trophy" style="color: #ffd700; font-size: 2rem;"></i>
+        <div>
+            <h4>Mastered</h4>
+            <p style="font-size: 1.5rem; color: #333;">{{ mastered_count }}</p>
+        </div>
+    </div>
+</div>
 
-    <div class="weak-words-section card" style="margin-top: 20px;">
-        <h3>⚠️ Weak Word List</h3>
-        <p>These are the words you miss the most. Spend extra time reviewing them!</p>
+<div style="display: grid; grid-template-columns: 3fr 2fr; gap: 30px; margin-top: 30px;">
+    
+    <div class="w3-card" style="padding: 30px;">
+        <h3 style="margin-top: 0;">Mastery History (Last 7 Days)</h3>
 
-        {% if weak_words %}
-            <table class="weak-words-table" style="width: 100%; text-align: left;">
-                <thead>
-                    <tr>
-                        <th>Word</th>
-                        <th>Times Tested</th>
-                        <th>Accuracy</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for word in weak_words %}
-                        <tr>
-                            <td><strong>{{ word.term }}</strong></td>
-                            <td>{{ word.times_tested }}</td>
-                            <td style="color: red;">
-                                {{ ((word.times_correct / word.times_tested) * 100) | round(1) }}%
-                            </td>
-                            <td>
-                                <button class="btn btn-small">Review Now</button>
-                            </td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+        <div style="position: relative; height: 300px; width: 100%;">
+            <canvas id="masteryChart"></canvas>
+        </div>
+
+    </div>
+
+    <div class="w3-card" style="padding: 30px; max-height: 400px; overflow-y: auto;">
+        <h3 style="margin-top: 0;">Needs Review</h3>
+        {% if weak_words|length == 0 %}
+            <p style="color: #666;">Great job! You don't have any weak words right now.</p>
         {% else %}
-            <div class="empty-state">
-                <p>Great job! You don't have any weak words right now.</p>
-            </div>
+            <ul style="list-style: none; padding: 0; margin: 0;">
+                {% for progress in weak_words %}
+                    <li style="padding: 15px 0; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <strong style="font-size: 1.1rem;">{{ progress.word.term }}</strong><br>
+                            <span style="color: #666; font-size: 0.9rem;">{{ progress.word.definition }}</span>
+                        </div>
+                        <div style="text-align: right; min-width: 80px;">
+                            <span style="font-weight: bold; color: #f44336;">
+                                {{ ((progress.times_correct / progress.times_tested) * 100) | round(1) }}%
+                            </span><br>
+                            <span style="font-size: 0.8rem; color: #888;">Tested {{ progress.times_tested }}x</span>
+                        </div>
+                    </li>
+                {% endfor %}
+            </ul>
         {% endif %}
     </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-    // The | tojson filter converts Python lists into JavaScript arrays
-    const labels = {{ chart_labels | tojson }};
-    const dataPoints = {{ chart_data | tojson }};
-
-    const ctx = document.getElementById('learningChart').getContext('2d');
-    const learningChart = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: labels,
-            datasets: [{
-                label: 'Words Learned',
-                data: dataPoints,
-                borderColor: '#4CAF50', // A nice green color
-                backgroundColor: 'rgba(76, 175, 80, 0.2)',
-                borderWidth: 2,
-                fill: true,
-                tension: 0.3 // Adds a slight curve to the line
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    ticks: {
-                        stepSize: 2
+    document.addEventListener('DOMContentLoaded', function() {
+        const ctx = document.getElementById('masteryChart').getContext('2d');
+        const masteryChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: {{ chart_labels | tojson }},
+                datasets: [{
+                    label: 'Words Mastered',
+                    data: {{ chart_data | tojson }},
+                    borderColor: '#04AA6D',
+                    backgroundColor: 'rgba(4, 170, 109, 0.2)',
+                    borderWidth: 3,
+                    fill: true,
+                    tension: 0.3,
+                    pointBackgroundColor: '#04AA6D',
+                    pointRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: { stepSize: 1 }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
                     }
                 }
             }
-        }
+        });
     });
 </script>
 {% endblock %}

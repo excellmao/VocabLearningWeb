@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}Add Words - Vocab App{% endblock %}
+
+{% block content %}
+<div class="deck-header">
+    <a href="{{ url_for('view_flashcards', topic_id=topic.id) }}" style="color: #666; text-decoration: none;">
+        <i class="fa-solid fa-arrow-left"></i> View Deck
+    </a>
+    <h2 style="margin-top: 10px;">Editing Deck: {{ topic.name }}</h2>
+</div>
+
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-top: 20px;">
+    <div class="w3-card">
+        <h3>Add a Term</h3>
+        <form method="POST">
+            {{ form.hidden_tag() }}
+            <div style="margin-bottom: 15px;">
+                {{ form.term.label }}<br>
+                {{ form.term(style="width: 100%; padding: 8px;") }}
+            </div>
+            <div style="margin-bottom: 15px;">
+                {{ form.definition.label }}<br>
+                {{ form.definition(style="width: 100%; padding: 8px; height: 80px;") }}
+            </div>
+            <div style="margin-bottom: 20px;">
+                {{ form.example_sentence.label }}<br>
+                {{ form.example_sentence(style="width: 100%; padding: 8px;") }}
+            </div>
+            {{ form.submit(class="btn btn-primary", style="width: 100%; background: #04AA6D;") }}
+        </form>
+    </div>
+
+    <div class="w3-card">
+        <h3>Words in Deck ({{ words|length }})</h3>
+        <ul style="list-style: none; padding: 0;">
+            {% for word in words %}
+                <li style="padding: 10px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <strong>{{ word.term }}</strong> - {{ word.definition }}
+                    </div>
+                    <form action="{{ url_for('delete_word', word_id=word.id) }}" method="POST" style="margin: 0;">
+                        <button type="submit" class="btn btn-small" style="background: #ff4d4d; color: white; padding: 5px 10px; border: none; border-radius: 4px; cursor: pointer;" onclick="return confirm('Delete this word for everyone?');">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </form>
+                </li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="w3-card" style="max-width: 800px; margin: 40px auto; padding: 40px; text-align: center;">
+    <div id="quiz-container">
+        <h3 style="color: #666;" id="question-counter"></h3>
+        <h1 style="font-size: 3rem; color: #333; margin: 20px 0;" id="term-display"></h1>
+        
+        <div id="options-grid" style="display: flex; flex-direction: column; gap: 15px; margin-top: 30px;">
+        </div>
+        
+        <button id="next-btn" class="btn btn-primary" style="margin-top: 20px; display: none; background-color: #04AA6D;">Next</button>
+    </div>
+    
+    <div id="results-container" style="display: none;">
+        <h2>Quiz Complete!</h2>
+        <p id="score-display" style="font-size: 1.5rem; margin: 20px 0;"></p>
+        <button id="finish-btn" class="btn btn-primary" style="background-color: #04AA6D;">Claim XP & Return</button>
+    </div>
+</div>
+
+<script>
+    const quizData = {{ quiz_data | tojson }};
+    let currentIndex = 0;
+    let results = [];
+    let score = 0;
+
+    const counterEl = document.getElementById('question-counter');
+    const termEl = document.getElementById('term-display');
+    const optionsEl = document.getElementById('options-grid');
+    const nextBtn = document.getElementById('next-btn');
+    const quizContainer = document.getElementById('quiz-container');
+    const resultsContainer = document.getElementById('results-container');
+    const scoreDisplay = document.getElementById('score-display');
+    const finishBtn = document.getElementById('finish-btn');
+
+    function loadQuestion() {
+        nextBtn.style.display = 'none';
+        optionsEl.innerHTML = '';
+        
+        const currentQ = quizData[currentIndex];
+        counterEl.innerText = `Question ${currentIndex + 1} of ${quizData.length}`;
+        termEl.innerText = currentQ.target_term;
+        
+        currentQ.options.forEach(opt => {
+            const btn = document.createElement('button');
+            btn.className = 'btn';
+            btn.style.cssText = 'padding: 15px; text-align: left; background: #f8f9fa; color: #333; border: 2px solid #ddd; cursor: pointer; border-radius: 5px;';
+            btn.innerText = opt.def;
+            btn.onclick = () => checkAnswer(opt.id, currentQ.correct_id, btn, currentQ.progress_id);
+            optionsEl.appendChild(btn);
+        });
+    }
+
+    function checkAnswer(selectedId, correctId, btnElement, progressId) {
+        const isCorrect = selectedId === correctId;
+        
+        Array.from(optionsEl.children).forEach(btn => {
+            btn.disabled = true;
+            btn.style.cursor = 'not-allowed';
+        });
+        
+        if (isCorrect) {
+            btnElement.style.backgroundColor = '#4caf50';
+            btnElement.style.borderColor = '#4caf50';
+            btnElement.style.color = 'white';
+            score++;
+        } else {
+            btnElement.style.backgroundColor = '#f44336';
+            btnElement.style.borderColor = '#f44336';
+            btnElement.style.color = 'white';
+        }
+        
+        results.push({
+            progress_id: progressId,
+            is_correct: isCorrect
+        });
+        
+        nextBtn.style.display = 'inline-block';
+    }
+
+    nextBtn.onclick = () => {
+        currentIndex++;
+        if (currentIndex < quizData.length) {
+            loadQuestion();
+        } else {
+            showResults();
+        }
+    };
+
+    function showResults() {
+        quizContainer.style.display = 'none';
+        resultsContainer.style.display = 'block';
+        scoreDisplay.innerText = `You scored ${score} out of ${quizData.length}!`;
+    }
+
+    finishBtn.onclick = () => {
+        fetch("{{ url_for('submit_quiz_batch') }}", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({ results: results })
+        }).then(() => {
+            window.location.href = "{{ url_for('dashboard') }}";
+        });
+    };
+
+    loadQuestion();
+</script>
+{% endblock %}

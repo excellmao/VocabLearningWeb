@@ -3,45 +3,102 @@
 {% block title %}Dashboard - Vocab App{% endblock %}
 
 {% block content %}
-<div class="dashboard-container">
-    <div class="welcome-header">
-        <h2>Welcome back, {{ current_user.username }}!</h2>
-        <p>Ready to learn some new words today?</p>
+<div class="dashboard-header">
+    <h1>Hi, {{ current_user.username }}!</h1>
+</div>
+
+<div class="streak-banner w3-card">
+    <div class="streak-icon">
+        <i class="fa-solid fa-fire" style="color: #ff9800; font-size: 2.5rem;"></i>
+    </div>
+    <div class="streak-text">
+        <p class="streak-label">CURRENT STREAK</p>
+        <h2>{{ current_user.current_streak }} <span>days</span></h2>
     </div>
 
-    <div class="gamification-panel">
-        <div class="stat-card">
-            <h3>Current Streak 🔥</h3>
-            <p class="stat-value">{{ current_user.current_streak }} Days</p>
-        </div>
-        
-        <div class="stat-card">
-            <h3>Level {{ current_user.level }}</h3>
-            <div class="xp-bar-container">
-                <div class="xp-bar" style="width: {{ (current_user.xp % 1000) / 10 }}%;"></div>
+    <div class="streak-week">
+        {% for day, is_active in streak_data %}
+            <div class="day {% if is_active %}active{% endif %}">{{ day }}</div>
+        {% endfor %}
+    </div>
+</div>
+
+<h2 class="section-title">My Learning</h2>
+
+<div class="learning-grid">
+
+    <div style="display: flex; flex-direction: column; gap: 20px;">
+
+        <div class="w3-card primary-learning-card" style="margin-bottom: 0;">
+            <div class="card-icon"><i class="fa-solid fa-book-open"></i></div>
+            <div class="card-details">
+                <h3>Spaced Repetition Review</h3>
+                <p>Next up: {{ words_due }} words ready for review</p>
             </div>
-            <p class="xp-text">{{ current_user.xp }} Total XP</p>
+            <a href="{{ url_for('study') }}" class="btn btn-continue">Continue</a>
+        </div>
+
+        <div class="w3-card primary-learning-card" style="border-top: 4px solid #ff9800; margin-bottom: 0;">
+            <div class="card-icon"><i class="fa-solid fa-bullseye" style="color: #ff9800;"></i></div>
+            <div class="card-details">
+                <h3>Targeted Practice</h3>
+                {% if weakest_topic %}
+                    <p>Your weakest area is <strong>{{ weakest_topic.name }}</strong></p>
+                {% else %}
+                    <p>Ready to test your general knowledge?</p>
+                {% endif %}
+            </div>
+
+            {% if weakest_topic %}
+                <form action="{{ url_for('quiz_run') }}" method="POST" style="margin: 0; margin-left: auto;">
+                    <input type="hidden" name="topic_ids" value="{{ weakest_topic.id }}">
+                    <input type="hidden" name="question_count" value="10">
+                    <button type="submit" class="btn btn-continue" style="background: #ff9800; border: none; cursor: pointer;">Take Quiz</button>
+                </form>
+            {% else %}
+                <a href="{{ url_for('quiz_setup') }}" class="btn btn-continue" style="background: #ff9800; margin-left: auto;">Setup Quiz</a>
+            {% endif %}
         </div>
     </div>
 
-    <div class="stats-panel">
-        <div class="stat-card">
-            <h3>Words in Library</h3>
-            <p class="stat-value">{{ total_words }}</p>
+    <div class="secondary-stats-grid" style="display: flex; flex-direction: column; gap: 20px;">
+        <div class="w3-card mini-stat-card" style="margin-bottom: 0; height: 100%;">
+            <i class="fa-solid fa-dumbbell"></i>
+            <div>
+                <h4>Total Words Learning</h4>
+                <p>{{ total_learning }}</p>
+            </div>
         </div>
-        <div class="stat-card">
-            <h3>Mastered Words</h3>
-            <p class="stat-value">{{ mastered_words }}</p>
-        </div>
-        <div class="stat-card">
-            <h3>Accuracy Rate</h3>
-            <p class="stat-value">85%</p> 
+        <div class="w3-card mini-stat-card" style="margin-bottom: 0; height: 100%;">
+            <i class="fa-solid fa-trophy"></i>
+            <div>
+                <h4>Words Mastered</h4>
+                <p>{{ mastered_count }}</p>
+            </div>
         </div>
     </div>
 
-    <div class="action-panel">
-        <a href="{{ url_for('study') }}" class="btn btn-primary btn-large">Continue Learning (SRS)</a>
-        <button class="btn btn-secondary btn-large">Start Daily Challenge</button>
+    <div class="w3-card" style="padding: 25px; margin-bottom: 0; align-self: start;">
+        <h4 style="margin-top: 0; border-bottom: 1px solid #eee; padding-bottom: 15px; display: flex; align-items: center; gap: 10px;">
+            <i class="fa-solid fa-ranking-star" style="color: #ffd700; font-size: 1.2rem;"></i> Weekly Top Mastered
+        </h4>
+
+        {% if leaderboard|length == 0 %}
+            <p style="color: #666; font-size: 0.9rem; margin-top: 15px;">No words mastered this week yet. Be the first!</p>
+        {% else %}
+            <ul style="list-style: none; padding: 0; margin: 15px 0 0 0; font-size: 1rem;">
+                {% for user, count in leaderboard %}
+                <li style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px dashed #eee;">
+                    <span>
+                        <strong style="color: #555; margin-right: 5px;">#{{ loop.index }}</strong>
+                        {{ user }}
+                    </span>
+                    <span style="color: #04AA6D; font-weight: bold; background: #e8f5e9; padding: 2px 8px; border-radius: 12px;">{{ count }}</span>
+                </li>
+                {% endfor %}
+            </ul>
+        {% endif %}
     </div>
+
 </div>
 {% endblock %}

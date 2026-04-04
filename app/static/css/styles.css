@@ -191,3 +191,61 @@ body.app-layout {
 .flip-card-front, .flip-card-back { position: absolute; width: 100%; height: 100%; -webkit-backface-visibility: hidden; backface-visibility: hidden; border-radius: 10px; padding: 20px; display: flex; flex-direction: column; justify-content: center; align-items: center; box-sizing: border-box; }
 .flip-card-front { background-color: #ffffff; color: #333; border: 2px solid #04AA6D; }
 .flip-card-back { background-color: #f8f9fa; color: #333; transform: rotateY(180deg); text-align: left; align-items: flex-start; justify-content: flex-start; border: 2px solid #ddd; }
+
+/* --- AUTH & FORMS --- */
+.auth-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 80vh;
+}
+
+.auth-card {
+    width: 100%;
+    max-width: 400px;
+    padding: 40px;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-label {
+    display: block;
+    font-weight: bold;
+    color: #555;
+    margin-bottom: 8px;
+}
+
+.form-control {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    box-sizing: border-box;
+    font-size: 1rem;
+    transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: #04AA6D;
+    box-shadow: 0 0 5px rgba(4, 170, 109, 0.3);
+}
+
+.btn-block {
+    width: 100%;
+    padding: 12px;
+    font-size: 1.1rem;
+    font-weight: bold;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    background: #04AA6D;
+    color: white;
+    margin-top: 10px;
+}
+
+.btn-block:hover {
+    background: #038857;
+}

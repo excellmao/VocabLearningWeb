@@ -10,27 +10,40 @@ from app.forms import TopicForm, WordForm
 from app.models import db, User, Topic, Word, WordProgress
 from sqlalchemy import func
 
+
 @app.route('/register', methods=['GET', 'POST'])
 def register():
+    # If they are already logged in, send them to the dashboard
     if current_user.is_authenticated:
         return redirect(url_for('dashboard'))
 
-    form = RegistrationForm()
+    if request.method == 'POST':
+        username = request.form.get('username')
+        password = request.form.get('password')
+        confirm_password = request.form.get('confirm_password')
 
-    if form.validate_on_submit():
-        hashed_password = generate_password_hash(form.password.data, method='pbkdf2:sha256')
-        new_user = User(username=form.username.data, password_hash=hashed_password)
+        # 1. Check if passwords match
+        if password != confirm_password:
+            flash('Passwords do not match. Please try again.')
+            return redirect(url_for('register'))
+
+        # 2. Check if username is already taken
+        user = User.query.filter_by(username=username).first()
+        if user:
+            flash('Username already exists. Please choose another one.')
+            return redirect(url_for('register'))
+
+        # 3. Hash the password and create the user
+        hashed_password = generate_password_hash(password, method='pbkdf2:sha256')
+        new_user = User(username=username, password_hash=hashed_password)
         db.session.add(new_user)
-        db.session.commit()  # Commit so the user gets an ID
-
-        default_topic = Topic(name="General", user_id=new_user.id)
-        db.session.add(default_topic)
         db.session.commit()
 
-        flash('Registration successful! You can now log in.')
+        # 4. Flash success message and redirect to login
+        flash('Account created successfully! Please log in.')
         return redirect(url_for('login'))
 
-    return render_template('register.html', form=form)
+    return render_template('register.html')
 
 
 @app.route('/login', methods=['GET', 'POST'])

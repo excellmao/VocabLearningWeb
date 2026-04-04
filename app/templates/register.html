@@ -1,57 +1,42 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Register - Vocab App</title>
-    </head>
-<body>
-    <h2>Create an Account</h2>
+{% extends "base.html" %}
 
-    {% with messages = get_flashed_messages() %}
-      {% if messages %}
-        <ul class="flashes">
-        {% for message in messages %}
-          <li style="color: red;">{{ message }}</li>
-        {% endfor %}
-        </ul>
-      {% endif %}
-    {% endwith %}
+{% block title %}Register - Vocab App{% endblock %}
 
-    <form method="POST" action="">
-        {{ form.hidden_tag() }}
-
-        <div>
-            {{ form.username.label }}<br>
-            {{ form.username(size=32) }}
-            {% for error in form.username.errors %}
-                <span style="color: red;">[{{ error }}]</span>
-            {% endfor %}
+{% block content %}
+<div class="auth-wrapper">
+    <div class="w3-card auth-card">
+        <div style="text-align: center; margin-bottom: 30px;">
+            <i class="fa-solid fa-user-plus" style="font-size: 3rem; color: #04AA6D; margin-bottom: 10px;"></i>
+            <h2 style="margin: 0; color: #333;">Create an Account</h2>
+            <p style="color: #666; margin-top: 5px;">Start mastering your vocabulary today.</p>
         </div>
-        <br>
 
-        <div>
-            {{ form.password.label }}<br>
-            {{ form.password(size=32) }}
-            {% for error in form.password.errors %}
-                <span style="color: red;">[{{ error }}]</span>
-            {% endfor %}
-        </div>
-        <br>
+        <form method="POST" action="">
+            {% if form %}
+                {{ form.hidden_tag() }}
+            {% endif %}
+            
+            <div class="form-group">
+                <label class="form-label" for="username">Choose a Username</label>
+                <input type="text" id="username" name="username" class="form-control" required autofocus>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label" for="password">Create a Password</label>
+                <input type="password" id="password" name="password" class="form-control" required>
+            </div>
 
-        <div>
-            {{ form.confirm_password.label }}<br>
-            {{ form.confirm_password(size=32) }}
-            {% for error in form.confirm_password.errors %}
-                <span style="color: red;">[{{ error }}]</span>
-            {% endfor %}
-        </div>
-        <br>
-
-        <div>
-            {{ form.submit() }}
-        </div>
-    </form>
-
-    <p>Already have an account? <a href="{{ url_for('login') }}">Log in here</a>.</p>
-</body>
-</html>
+            <div class="form-group">
+                <label class="form-label" for="confirm_password">Confirm Password</label>
+                <input type="password" id="confirm_password" name="confirm_password" class="form-control" required>
+            </div>
+        
+            <button type="submit" class="btn-block">Sign Up</button>
+        </form>
+        
+        <p style="text-align: center; margin-top: 25px; color: #666; font-size: 0.95rem;">
+            Already have an account? <a href="{{ url_for('login') }}" style="color: #04AA6D; text-decoration: none; font-weight: bold;">Login here</a>.
+        </p>
+    </div>
+</div>
+{% endblock %}

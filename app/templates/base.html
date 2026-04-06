@@ -23,6 +23,13 @@
                 <li><a href="{{ url_for('quiz_setup') }}"><i class="fa-solid fa-gamepad"></i> Quizzes</a></li>
                 <li><a href="{{ url_for('progress') }}"><i class="fa-solid fa-chart-line"></i> My Progress</a></li>
             {% endif %}
+            {% if current_user.is_admin %}
+                <li>
+                    <a href="{{ url_for('admin_panel') }}" style="color: #f44336; font-weight: bold;">
+                        <i class="fa-solid fa-shield-halved" style="color: #f44336;"></i> Admin Panel
+                    </a>
+                </li>
+            {% endif %}
         </ul>
 
         <div class="sidebar-bottom">

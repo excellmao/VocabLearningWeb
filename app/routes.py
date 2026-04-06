@@ -9,7 +9,9 @@ from app.forms import RegistrationForm, LoginForm
 from app.forms import TopicForm, WordForm
 from app.models import db, User, Topic, Word, WordProgress
 from sqlalchemy import func
-
+from datetime import datetime, timezone
+from functools import wraps
+from flask import abort
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
@@ -481,7 +483,8 @@ def enroll_topic(topic_id):
 def delete_word(word_id):
     word = Word.query.get_or_404(word_id)
 
-    if word.user_id != current_user.id:
+    # ADDED the admin bypass here:
+    if word.user_id != current_user.id and not current_user.is_admin:
         flash("Unauthorized.")
         return redirect(url_for('flashcards'))
 
@@ -499,7 +502,8 @@ def delete_word(word_id):
 def delete_topic(topic_id):
     topic = Topic.query.get_or_404(topic_id)
 
-    if topic.user_id != current_user.id:
+    # ADDED the admin bypass here:
+    if topic.user_id != current_user.id and not current_user.is_admin:
         flash("Unauthorized.")
         return redirect(url_for('flashcards'))
 
@@ -513,3 +517,42 @@ def delete_topic(topic_id):
 
     flash(f'Deck "{topic.name}" has been deleted.')
     return redirect(url_for('flashcards'))
+
+
+# --- ADMIN SECURITY DECORATOR ---
+def admin_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not current_user.is_authenticated or not current_user.is_admin:
+            flash("You do not have permission to view that page.", "danger")
+            return redirect(url_for('dashboard'))
+        return f(*args, **kwargs)
+
+    return decorated_function
+
+
+# --- ADMIN ROUTES ---
+@app.route('/admin')
+@admin_required
+def admin_panel():
+    users = User.query.all()
+    # We can fetch all topics to display stats in the admin panel
+    topics = Topic.query.all()
+    return render_template('admin.html', users=users, topics=topics)
+
+
+@app.route('/admin/delete_user/<int:user_id>', methods=['POST'])
+@admin_required
+def delete_user(user_id):
+    user = User.query.get_or_404(user_id)
+    if user.id == current_user.id:
+        flash('You cannot delete your own admin account!', 'danger')
+        return redirect(url_for('admin_panel'))
+
+    # Delete their study progress first to prevent database errors
+    WordProgress.query.filter_by(user_id=user.id).delete()
+    db.session.delete(user)
+    db.session.commit()
+    flash(f'User {user.username} has been deleted.', 'success')
+    return redirect(url_for('admin_panel'))
+

@@ -15,7 +15,7 @@ class User(db.Model, UserMixin):
     level = db.Column(db.Integer, default=1)
     current_streak = db.Column(db.Integer, default=0)
     last_active = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
-
+    is_admin = db.Column(db.Boolean, default=False)
     # Relationship to private progress entries
     all_word_progress = db.relationship('WordProgress', backref='progress_owner', lazy=True)
 
@@ -90,3 +90,4 @@ class WordProgress(db.Model):
 
     def __repr__(self):
         return f'<WordProgress {self.word.term} for {self.user.username}>'
+

@@ -23,6 +23,7 @@ class LoginForm(FlaskForm):
 class WordForm(FlaskForm):
     term = StringField('Word/Term', validators=[DataRequired(), Length(max=100)])
     definition = TextAreaField('Definition', validators=[DataRequired()])
+    ipa = StringField('IPA Pronunciation (Optional)')
     example_sentence = TextAreaField('Example Sentence (Optional)')
     synonyms = StringField('Synonyms (Comma separated, Optional)')
     topic_id = SelectField('Topic', coerce=int, validators=[DataRequired()])

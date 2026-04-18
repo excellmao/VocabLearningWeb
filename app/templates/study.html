@@ -14,9 +14,9 @@
         </div>
     {% else %}
         <div id="study-card" class="w3-card" style="margin: 0 auto; padding: 40px; border: 2px solid #04AA6D; border-radius: 10px; cursor: pointer; min-height: 250px; display: flex; flex-direction: column; justify-content: center;">
-            <h1 id="term-display" style="font-size: 2.5rem; margin-bottom: 15px;"></h1>
+            <h2 id="term-display" style="font-size: 3rem; margin-bottom: 5px; color: #333;">Loading...</h2>
+                <p id="ipa-display" style="color: #888; font-size: 1.5rem; margin-top: 0; margin-bottom: 20px; font-family: 'Times New Roman', serif; display: none;"></p>
             <p id="hint-text" style="color: #888; font-size: 0.9rem;">Click or press Spacebar to show answer</p>
-
             <div id="answer-section" style="display: none; margin-top: 20px; border-top: 1px solid #eee; padding-top: 20px;">
                 <p id="definition-display" style="font-size: 1.2rem; margin-bottom: 10px; text-align: left;"></p>
                 <p id="example-display" style="font-style: italic; color: #666; text-align: left;"></p>
@@ -69,6 +69,13 @@
 
         const currentWord = studyWords[currentIndex];
         termDisplay.innerText = currentWord.term;
+        const ipaDisplay = document.getElementById('ipa-display');
+        if (currentWord.ipa) {
+            ipaDisplay.innerText = "/" + currentWord.ipa + "/";
+            ipaDisplay.style.display = 'block';
+        } else {
+            ipaDisplay.style.display = 'none';
+        }
         definitionDisplay.innerText = "Definition: " + currentWord.definition;
         exampleDisplay.innerText = currentWord.example ? '"' + currentWord.example + '"' : "";
         remainingText.innerText = `Words remaining: ${studyWords.length - currentIndex}`;

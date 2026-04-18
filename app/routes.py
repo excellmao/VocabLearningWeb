@@ -12,6 +12,10 @@ from sqlalchemy import func
 from datetime import datetime, timezone
 from functools import wraps
 from flask import abort
+import csv
+import io
+from flask import session
+
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
@@ -174,6 +178,7 @@ def study():
         'progress_id': progress.id,
         'word_id': progress.word.id,
         'term': progress.word.term,
+        'ipa': progress.word.ipa,  # <--- NEW
         'definition': progress.word.definition,
         'example': progress.word.example_sentence,
     } for progress in due_progress]
@@ -255,15 +260,25 @@ def quiz_run():
 
     if not available_progress:
         flash("You don't have enough words enrolled for the selected topics.")
-        return redirect(url_for('quiz'))
+        return redirect(url_for('quiz_setup'))
 
     selected_progress = random.sample(available_progress, min(count, len(available_progress)))
+
+    # We grab all words once to keep the database fast
     all_words = Word.query.all()
 
     quiz_data = []
     for p in selected_progress:
         target_word = p.word
-        wrong_choices = random.sample([w for w in all_words if w.id != target_word.id], min(3, len(all_words) - 1))
+
+        # --- THE FIX ---
+        # 1. Filter to ONLY include words from the exact same topic (excluding the correct answer)
+        same_topic_words = [w for w in all_words if w.topic_id == target_word.topic_id and w.id != target_word.id]
+
+        # 2. Grab up to 3 random wrong choices from that specific filtered list
+        wrong_choices = random.sample(same_topic_words, min(3, len(same_topic_words)))
+
+        # 3. Combine them with the correct answer and shuffle
         options = wrong_choices + [target_word]
         random.shuffle(options)
 
@@ -298,6 +313,7 @@ def submit_quiz_batch():
         # If delta.days == 0, they already got their streak today, do nothing.
 
     current_user.last_active = now
+    detailed_results = []
 
     for item in results:
         progress = WordProgress.query.get(item['progress_id'])
@@ -313,10 +329,20 @@ def submit_quiz_batch():
                     progress.date_mastered = now
                     xp_earned += 50
 
+            detailed_results.append(item)
+
     current_user.xp += xp_earned
     db.session.commit()
 
-    return jsonify({"status": "success", "xp_earned": xp_earned})
+    session['last_quiz'] = {
+        'xp': xp_earned,
+        'details': detailed_results
+    }
+
+    return jsonify({
+        "status": "success",
+        "redirect_url": url_for('quiz_results_view')
+    })
 
 @app.route('/flashcards')
 def flashcards():
@@ -392,6 +418,7 @@ def add_word(topic_id):
         # 1. Create the public word
         new_word = Word(
             term=form.term.data,
+            ipa=form.ipa.data,
             definition=form.definition.data,
             example_sentence=form.example_sentence.data,
             topic_id=topic.id,
@@ -556,3 +583,63 @@ def delete_user(user_id):
     flash(f'User {user.username} has been deleted.', 'success')
     return redirect(url_for('admin_panel'))
 
+
+@app.route('/import_csv/<int:topic_id>', methods=['POST'])
+@login_required
+def import_csv(topic_id):
+    topic = Topic.query.get_or_404(topic_id)
+
+    if 'file' not in request.files:
+        flash('No file part', 'danger')
+        return redirect(url_for('add_word', topic_id=topic.id))
+
+    file = request.files['file']
+    if file.filename == '':
+        flash('No selected file', 'danger')
+        return redirect(url_for('add_word', topic_id=topic.id))
+
+    if file and file.filename.endswith('.csv'):
+        # Decode the file stream as text
+        stream = io.StringIO(file.stream.read().decode("UTF8"), newline=None)
+        csv_input = csv.reader(stream)
+
+        # Skip the header row (Term, Definition, Example)
+        next(csv_input, None)
+
+        words_added = 0
+        for row in csv_input:
+            # We need at least a term and a definition
+            if len(row) >= 2 and row[0].strip() and row[1].strip():
+                term = row[0].strip()
+                definition = row[1].strip()
+                example = row[2].strip() if len(row) > 2 else ""
+
+                # 1. Create the Word
+                new_word = Word(term=term, definition=definition, example_sentence=example, topic_id=topic.id,
+                                user_id=current_user.id)
+                db.session.add(new_word)
+                db.session.flush()  # Flushes to DB to generate the new_word.id immediately
+
+                # 2. Give the creator a progress tracker
+                progress = WordProgress(user_id=current_user.id, word_id=new_word.id)
+                db.session.add(progress)
+                words_added += 1
+
+        db.session.commit()
+        flash(f'Successfully imported {words_added} words into "{topic.name}"!', 'success')
+    else:
+        flash('Please upload a valid .csv file.', 'danger')
+
+    return redirect(url_for('add_word', topic_id=topic.id))
+
+
+@app.route('/quiz/results')
+@login_required
+def quiz_results_view():
+    quiz_data = session.pop('last_quiz', None)
+
+    # If they try to visit this URL without taking a quiz, kick them out
+    if not quiz_data:
+        return redirect(url_for('dashboard'))
+
+    return render_template('quiz_results.html', data=quiz_data)

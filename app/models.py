@@ -48,6 +48,7 @@ class Word(db.Model):
 
     # Shared Vocabulary Details
     term = db.Column(db.String(100), nullable=False)
+    ipa = db.Column(db.String(128))
     definition = db.Column(db.Text, nullable=False)
     example_sentence = db.Column(db.Text)
     synonyms = db.Column(db.String(200))

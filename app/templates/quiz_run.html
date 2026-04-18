@@ -1,109 +1,105 @@
 {% extends "base.html" %}
 
+{% block title %}Quiz - Vocab App{% endblock %}
+
 {% block content %}
-<div class="w3-card" style="max-width: 800px; margin: 40px auto; padding: 40px; text-align: center;">
-    <div id="quiz-container">
-        <h3 style="color: #666;" id="question-counter"></h3>
-        <h1 style="font-size: 3rem; color: #333; margin: 20px 0;" id="term-display"></h1>
-        
-        <div id="options-grid" style="display: flex; flex-direction: column; gap: 15px; margin-top: 30px;">
+<div style="max-width: 800px; margin: 0 auto; padding-top: 20px;">
+    <div class="w3-card" style="padding: 40px; text-align: center; min-height: 400px; position: relative;">
+
+        {% for q in quiz_data %}
+        <div class="quiz-card" id="card-{{ loop.index0 }}" style="display: {% if loop.index0 == 0 %}block{% else %}none{% endif %};">
+            <p style="color: #666; font-weight: bold; margin-bottom: 20px; text-transform: uppercase;">Question {{ loop.index }} of {{ quiz_data|length }}</p>
+            <h2 style="font-size: 2.5rem; margin-bottom: 40px; color: #333;">{{ q.target_term }}</h2>
+
+            <div style="display: flex; flex-direction: column; gap: 15px;">
+                {% for opt in q.options %}
+                <button data-id="{{ opt.id }}"
+                        onclick="selectOption(this, {{ opt.id }}, {{ q.correct_id }}, {{ q.progress_id }})"
+                        class="btn"
+                        style="width: 100%; padding: 15px; font-size: 1.1rem; border: 2px solid #e0e0e0; background: white; border-radius: 8px; cursor: pointer; text-align: left; transition: all 0.2s ease;">
+                    {{ opt.def }}
+                </button>
+                {% endfor %}
+            </div>
         </div>
-        
-        <button id="next-btn" class="btn btn-primary" style="margin-top: 20px; display: none; background-color: #04AA6D;">Next</button>
-    </div>
-    
-    <div id="results-container" style="display: none;">
-        <h2>Quiz Complete!</h2>
-        <p id="score-display" style="font-size: 1.5rem; margin: 20px 0;"></p>
-        <button id="finish-btn" class="btn btn-primary" style="background-color: #04AA6D;">Claim XP & Return</button>
+        {% endfor %}
+
     </div>
 </div>
 
 <script>
-    const quizData = {{ quiz_data | tojson }};
     let currentIndex = 0;
-    let results = [];
-    let score = 0;
+    const quizData = {{ quiz_data | tojson | safe }};
+    const results = [];
 
-    const counterEl = document.getElementById('question-counter');
-    const termEl = document.getElementById('term-display');
-    const optionsEl = document.getElementById('options-grid');
-    const nextBtn = document.getElementById('next-btn');
-    const quizContainer = document.getElementById('quiz-container');
-    const resultsContainer = document.getElementById('results-container');
-    const scoreDisplay = document.getElementById('score-display');
-    const finishBtn = document.getElementById('finish-btn');
-
-    function loadQuestion() {
-        nextBtn.style.display = 'none';
-        optionsEl.innerHTML = '';
-        
-        const currentQ = quizData[currentIndex];
-        counterEl.innerText = `Question ${currentIndex + 1} of ${quizData.length}`;
-        termEl.innerText = currentQ.target_term;
-        
-        currentQ.options.forEach(opt => {
-            const btn = document.createElement('button');
-            btn.className = 'btn';
-            btn.style.cssText = 'padding: 15px; text-align: left; background: #f8f9fa; color: #333; border: 2px solid #ddd; cursor: pointer; border-radius: 5px;';
-            btn.innerText = opt.def;
-            btn.onclick = () => checkAnswer(opt.id, currentQ.correct_id, btn, currentQ.progress_id);
-            optionsEl.appendChild(btn);
+    function showCard(index) {
+        document.querySelectorAll('.quiz-card').forEach((card, i) => {
+            card.style.display = i === index ? 'block' : 'none';
         });
     }
 
-    function checkAnswer(selectedId, correctId, btnElement, progressId) {
-        const isCorrect = selectedId === correctId;
-        
-        Array.from(optionsEl.children).forEach(btn => {
+    function selectOption(button, optionId, correctId, progressId) {
+        const card = button.closest('.quiz-card');
+        const buttons = card.querySelectorAll('button');
+
+        // Disable all buttons so the user can't click twice
+        buttons.forEach(btn => {
             btn.disabled = true;
-            btn.style.cursor = 'not-allowed';
+            btn.style.cursor = 'default';
         });
-        
+
+        const isCorrect = (optionId === correctId);
+
         if (isCorrect) {
-            btnElement.style.backgroundColor = '#4caf50';
-            btnElement.style.borderColor = '#4caf50';
-            btnElement.style.color = 'white';
-            score++;
+            button.style.backgroundColor = '#04AA6D'; // Green
+            button.style.color = 'white';
+            button.style.borderColor = '#038857';
         } else {
-            btnElement.style.backgroundColor = '#f44336';
-            btnElement.style.borderColor = '#f44336';
-            btnElement.style.color = 'white';
+            button.style.backgroundColor = '#f44336'; // Red
+            button.style.color = 'white';
+            button.style.borderColor = '#d32f2f';
+
+            // THE FIX: Check the exact data-id attribute instead of the onclick string!
+            buttons.forEach(btn => {
+                if (parseInt(btn.getAttribute('data-id')) === correctId) {
+                    btn.style.backgroundColor = '#04AA6D';
+                    btn.style.color = 'white';
+                    btn.style.border = '2px solid #038857';
+                }
+            });
         }
-        
+
         results.push({
             progress_id: progressId,
-            is_correct: isCorrect
+            is_correct: isCorrect,
+            term: quizData[currentIndex].target_term,
+            options: quizData[currentIndex].options,
+            correct_id: correctId,
+            selected_id: optionId
         });
-        
-        nextBtn.style.display = 'inline-block';
+
+        setTimeout(() => {
+            if (currentIndex < quizData.length - 1) {
+                currentIndex++;
+                showCard(currentIndex);
+            } else {
+                submitQuiz();
+            }
+        }, 1500);
     }
 
-    nextBtn.onclick = () => {
-        currentIndex++;
-        if (currentIndex < quizData.length) {
-            loadQuestion();
-        } else {
-            showResults();
-        }
-    };
-
-    function showResults() {
-        quizContainer.style.display = 'none';
-        resultsContainer.style.display = 'block';
-        scoreDisplay.innerText = `You scored ${score} out of ${quizData.length}!`;
-    }
-
-    finishBtn.onclick = () => {
-        fetch("{{ url_for('submit_quiz_batch') }}", {
-            method: "POST",
-            headers: {"Content-Type": "application/json"},
+    function submitQuiz() {
+        fetch('{{ url_for("submit_quiz_batch") }}', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ results: results })
-        }).then(() => {
-            window.location.href = "{{ url_for('dashboard') }}";
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === "success") {
+                window.location.href = data.redirect_url;
+            }
         });
-    };
-
-    loadQuestion();
+    }
 </script>
 {% endblock %}

@@ -30,6 +30,16 @@
         </form>
     </div>
 
+    <div class="w3-card" style="margin-bottom: 30px; border-left: 4px solid #2196f3;">
+        <h3 style="margin-top: 0; color: #333;"><i class="fa-solid fa-file-csv" style="color: #2196f3;"></i> Bulk Import via CSV</h3>
+        <p style="color: #666; font-size: 0.95rem;">Upload a .csv file to add multiple words instantly. Your file must have headers and follow this exact column order: <strong>Term, Definition, Example Sentence (optional)</strong>.</p>
+
+        <form action="{{ url_for('import_csv', topic_id=topic.id) }}" method="POST" enctype="multipart/form-data" style="display: flex; gap: 15px; align-items: center; margin-top: 15px;">
+            <input type="file" name="file" accept=".csv" required style="flex-grow: 1; padding: 8px; border: 1px solid #ddd; border-radius: 5px;">
+            <button type="submit" class="btn" style="background: #2196f3; color: white; border: none; padding: 10px 20px; border-radius: 5px; font-weight: bold; cursor: pointer;">Upload & Import</button>
+        </form>
+    </div>
+
     <div class="w3-card">
         <h3>Words in Deck ({{ words|length }})</h3>
         <ul style="list-style: none; padding: 0;">

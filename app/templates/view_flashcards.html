@@ -53,13 +53,14 @@
             <div class="flip-card-inner">
 
                 <div class="flip-card-front">
-                    <h3 class="word-term" style="font-size: 1.8rem;">{{ word.term }}</h3>
+                    <h2 style="margin-bottom: 5px;">{{ word.term }}</h2>
 
-                    <div style="margin-top: 15px; font-size: 1.5rem; color: #666;">
-                        🔊
-                    </div>
+                    {% if word.ipa %}
+                        <p style="color: #888; font-size: 1.1rem; margin-top: 0; margin-bottom: 15px; font-family: 'Times New Roman', serif;">/{{ word.ipa }}/</p>
+                    {% endif %}
 
-                    <p class="flip-hint" style="font-size: 0.8rem; color: #888; position: absolute; bottom: 15px;">Click to flip & listen</p>
+                    <i class="fa-solid fa-volume-high" style="color: #607d8b; font-size: 1.5rem; margin-top: 15px;"></i>
+                    <p style="font-size: 0.8rem; color: #999;">Click to flip & listen</p>
                 </div>
 
                 <div class="flip-card-back" style="padding: 30px;">

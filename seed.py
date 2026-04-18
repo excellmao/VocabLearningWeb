@@ -15,15 +15,16 @@ def seed_database():
         now = datetime.now(timezone.utc)
 
         users = [
-            {'user': 'testuser', 'pass': 'password123'},
-            {'user': 'study_champ', 'pass': 'password123'},
-            {'user': 'vocab_master', 'pass': 'password123'}
+            {'user': 'admin', 'pass': 'admin', 'is_admin': True},
+            {'user': 'testuser', 'pass': 'password123', 'is_admin': False},
+            {'user': 'study_champ', 'pass': 'password123', 'is_admin': False},
+            {'user': 'vocab_master', 'pass': 'password123', 'is_admin': False}
         ]
 
         user_objects = {}
         for u in users:
             hashed = generate_password_hash(u['pass'], method='pbkdf2:sha256')
-            new_user = User(username=u['user'], password_hash=hashed)
+            new_user = User(username=u['user'], password_hash=hashed, is_admin=u['is_admin'])
             db.session.add(new_user)
             db.session.commit()
             user_objects[u['user']] = new_user

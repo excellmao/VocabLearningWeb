@@ -33,7 +33,7 @@
         {% endif %}
     </div>
 
-    {% if current_user.is_authenticated and current_user.id == topic.user_id %}
+    {% if current_user.is_authenticated and (topic.user_id == current_user.id or current_user.is_admin) %}
     <div style="display: flex; gap: 10px; align-items: center; margin-top: 35px;">
         <a href="{{ url_for('add_word', topic_id=topic.id) }}" class="btn" style="background-color: #e0e0e0; color: #333; text-decoration: none; padding: 10px 15px; border-radius: 5px; font-weight: bold;">
             <i class="fa-solid fa-pen"></i> Manage Words

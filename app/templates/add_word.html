@@ -11,8 +11,8 @@
 
 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-top: 20px;">
     <div class="w3-card">
-        <h3>Add a Term</h3>
-        <form method="POST" action="">
+        <h3 id="form-title" style="margin-top: 0; color: #333;">Add a Term</h3>
+        <form id="word-form" method="POST" action="{{ url_for('add_word', topic_id=topic.id) }}">
             {{ form.hidden_tag() }}
 
             <div class="form-group" style="margin-bottom: 15px;">
@@ -35,7 +35,10 @@
                 {{ form.example_sentence(class="form-control", placeholder="e.g., I ate an apple today.", rows="2") }}
             </div>
 
-            {{ form.submit(class="btn-block", style="background-color: #04AA6D; border: none;") }}
+            <div style="display: flex; gap: 10px; margin-top: 10px;">
+                {{ form.submit(id="submit-btn", class="btn-block", style="background-color: #04AA6D; border: none; flex: 1; padding: 12px; border-radius: 5px; color: white; cursor: pointer; font-weight: bold;") }}
+                <button type="button" id="cancel-btn" class="btn" style="display: none; background-color: #f44336; color: white; padding: 12px 20px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer;" onclick="cancelEdit()">Cancel</button>
+            </div>
         </form>
     </div>
 
@@ -60,22 +63,85 @@
         </form>
     </div>
 
-    <div class="w3-card">
-        <h3>Words in Deck ({{ words|length }})</h3>
+    <div class="w3-card" style="grid-column: 1 / -1;">
+        <h3 style="margin-top: 0;">Words in Deck ({{ words|length }})</h3>
         <ul style="list-style: none; padding: 0;">
             {% for word in words %}
-                <li style="padding: 10px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center;">
+                <li style="padding: 15px 10px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center;">
                     <div>
-                        <strong>{{ word.term }}</strong> - {{ word.definition }}
+                        <strong style="font-size: 1.1rem;">{{ word.term }}</strong>
+                        {% if word.ipa %}<span style="color: #888; font-family: 'Times New Roman', serif; margin-left: 5px;">/{{ word.ipa }}/</span>{% endif %}
+                        <br>
+                        <span style="color: #555; font-size: 0.95rem;">{{ word.definition }}</span>
                     </div>
-                    <form action="{{ url_for('delete_word', word_id=word.id) }}" method="POST" style="margin: 0;">
-                        <button type="submit" class="btn btn-small" style="background: #ff4d4d; color: white; padding: 5px 10px; border: none; border-radius: 4px; cursor: pointer;" onclick="return confirm('Delete this word for everyone?');">
-                            <i class="fa-solid fa-trash"></i>
+
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <button type="button" class="btn btn-small" style="background: #ff9800; color: white; padding: 8px 12px; border: none; border-radius: 4px; cursor: pointer;"
+                                data-id="{{ word.id }}"
+                                data-term="{{ word.term }}"
+                                data-ipa="{{ word.ipa or '' }}"
+                                data-def="{{ word.definition }}"
+                                data-ex="{{ word.example_sentence or '' }}"
+                                onclick="setupEdit(this)">
+                            <i class="fa-solid fa-pen"></i>
                         </button>
-                    </form>
+
+                        <form action="{{ url_for('delete_word', word_id=word.id) }}" method="POST" style="margin: 0;">
+                            <button type="submit" class="btn btn-small" style="background: #ff4d4d; color: white; padding: 8px 12px; border: none; border-radius: 4px; cursor: pointer;" onclick="return confirm('Delete this word for everyone?');">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                        </form>
+                    </div>
                 </li>
             {% endfor %}
         </ul>
     </div>
 </div>
+
+<script>
+    // Store the original add route so we can reset it later
+    const defaultAction = "{{ url_for('add_word', topic_id=topic.id) }}";
+
+    function setupEdit(button) {
+        // Smoothly scroll back to the form
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+
+        // Grab the data from the button we clicked
+        const id = button.getAttribute('data-id');
+        const term = button.getAttribute('data-term');
+        const ipa = button.getAttribute('data-ipa');
+        const definition = button.getAttribute('data-def');
+        const example = button.getAttribute('data-ex');
+
+        // Fill the form inputs using WTForms auto-generated IDs
+        document.getElementById('term').value = term;
+        document.getElementById('ipa').value = ipa;
+        document.getElementById('definition').value = definition;
+        document.getElementById('example_sentence').value = example;
+
+        // Change the form action to our new edit route
+        document.getElementById('word-form').action = `/edit_word/${id}`;
+
+        // Update the UI to show we are in Edit Mode
+        document.getElementById('form-title').innerText = "Edit Term: " + term;
+        document.getElementById('submit-btn').value = "Update Word";
+        document.getElementById('cancel-btn').style.display = "block";
+    }
+
+    function cancelEdit() {
+        // Reset form action back to create mode
+        document.getElementById('word-form').action = defaultAction;
+
+        // Clear all inputs
+        document.getElementById('term').value = "";
+        document.getElementById('ipa').value = "";
+        document.getElementById('definition').value = "";
+        document.getElementById('example_sentence').value = "";
+
+        // Reset the UI
+        document.getElementById('form-title').innerText = "Add a Term";
+        document.getElementById('submit-btn').value = "Save Word";
+        document.getElementById('cancel-btn').style.display = "none";
+    }
+</script>
 {% endblock %}

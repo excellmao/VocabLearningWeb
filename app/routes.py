@@ -407,6 +407,28 @@ def create_topic():
 
     return render_template('create_topic.html', form=form)
 
+@app.route('/edit_word/<int:word_id>', methods=['POST'])
+@login_required
+def edit_word(word_id):
+    word = Word.query.get_or_404(word_id)
+
+    # Security Check: Only the creator or an admin can edit
+    if word.user_id != current_user.id and not current_user.is_admin:
+        flash("Unauthorized.", "danger")
+        return redirect(url_for('flashcards'))
+
+    topic_id = word.topic_id
+
+    # Update the word with the new data from the form
+    word.term = request.form.get('term')
+    word.ipa = request.form.get('ipa')
+    word.definition = request.form.get('definition')
+    word.example_sentence = request.form.get('example_sentence')
+
+    db.session.commit()
+    flash(f'Successfully updated "{word.term}"!', 'success')
+
+    return redirect(url_for('add_word', topic_id=topic_id))
 
 @app.route('/add_word/<int:topic_id>', methods=['GET', 'POST'])
 @login_required
